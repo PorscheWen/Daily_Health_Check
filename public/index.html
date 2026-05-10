@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2d7856" />
+  <meta name="description" content="每日健康打卡 PWA" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <title>每日健康打卡</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>每日健康打卡</h1>
+    <p>本機伺服器 SQLite 儲存 · 衛教參考非醫療診斷<span class="badge-offline">離線模式</span></p>
+  </header>
+
+  <main>
+    <nav class="tab-bar" role="tablist" aria-label="主要分頁">
+      <button type="button" class="tab-btn is-active" role="tab" id="tab-checkin" aria-selected="true" aria-controls="panel-checkin" data-tab="checkin">打卡</button>
+      <button type="button" class="tab-btn" role="tab" id="tab-records" aria-selected="false" aria-controls="panel-records" data-tab="records">紀錄</button>
+      <button type="button" class="tab-btn" role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings" data-tab="settings">個人設定</button>
+    </nav>
+
+    <div id="panel-checkin" class="tab-panel" role="tabpanel" aria-labelledby="tab-checkin">
+    <p class="disclaimer">
+      資料經由此裝置連線至你的伺服器並寫入本機資料庫。個人資料與提醒請至「個人設定」；紀錄可於「紀錄」分頁以 LINE 分享。
+    </p>
+
+    <section class="card" id="section-checkin">
+      <h2>今日打卡</h2>
+      <p class="status" id="todayLabel"></p>
+      <div class="row2">
+        <div>
+          <label for="sys">收縮壓</label>
+          <input type="number" id="sys" min="60" max="260" placeholder="mmHg" />
+        </div>
+        <div>
+          <label for="dia">舒張壓</label>
+          <input type="number" id="dia" min="30" max="200" placeholder="mmHg" />
+        </div>
+      </div>
+      <label for="timing">血糖時機</label>
+      <select id="timing">
+        <option value="unknown">未註記</option>
+        <option value="fasting">空腹／餐前</option>
+        <option value="postmeal">飯後</option>
+      </select>
+      <label for="glucose">血糖（mg/dL）</label>
+      <input type="number" id="glucose" min="20" max="600" step="0.1" placeholder="例：95" />
+      <label for="exercise">運動習慣</label>
+      <textarea id="exercise" placeholder="例：飯後散步20分鐘；若無可填「無」"></textarea>
+      <button type="button" class="btn btn-primary" id="btnCheckin">送出打卡</button>
+      <p class="status" id="checkinStatus"></p>
+    </section>
+
+    <section class="card" id="section-advice">
+      <h2>衛教建議</h2>
+      <div id="adviceOut">送出打卡後會顯示於此。</div>
+    </section>
+    </div>
+
+    <div id="panel-records" class="tab-panel" role="tabpanel" aria-labelledby="tab-records" hidden>
+    <section class="card" id="section-history">
+      <h2>健康紀錄</h2>
+      <p class="status subtle">依<strong>紀錄時間</strong>新到舊排序（台北時區）。</p>
+      <div class="history-actions">
+        <button type="button" class="btn btn-ghost btn-inline" id="btnRefreshHistory">重新整理</button>
+        <button type="button" class="btn btn-line btn-inline" id="btnShareAllLine">LINE 分享全部摘要</button>
+      </div>
+      <div class="history-cards" id="historyList"></div>
+      <p class="status" id="historyStatus"></p>
+    </section>
+    </div>
+
+    <div id="panel-settings" class="tab-panel" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <section class="card" id="section-profile">
+      <h2>個人資料</h2>
+      <div class="row2">
+        <div>
+          <label for="age">年齡</label>
+          <input type="number" id="age" min="1" max="120" placeholder="例：68" />
+        </div>
+        <div>
+          <label for="gender">性別</label>
+          <select id="gender">
+            <option value="">請選擇</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary" id="btnSaveProfile">儲存個人資料</button>
+      <p class="status" id="profileStatus"></p>
+    </section>
+
+    <section class="card" id="section-reminder">
+      <h2>提醒</h2>
+      <p class="status">瀏覽器通知時間為台北時區；需曾開啟此頁並允許通知。伺服器端 LINE 推播僅適用 LINE Bot 綁定之用戶。</p>
+      <label>
+        <input type="checkbox" id="reminderEnabled" />
+        啟用每日提醒（本機通知）
+      </label>
+      <label for="reminderTime">時間</label>
+      <input type="time" id="reminderTime" />
+      <button type="button" class="btn btn-primary" id="btnSaveReminder">同步提醒設定到伺服器</button>
+      <button type="button" class="btn btn-ghost" id="btnNotifyPermission">請求通知權限</button>
+      <p class="status" id="reminderStatus"></p>
+    </section>
+    </div>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

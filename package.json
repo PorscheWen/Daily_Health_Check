@@ -1,0 +1,19 @@
+{
+  "name": "daily-health-check-linebot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LINE Bot：每日健康打卡（本機 SQLite）",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

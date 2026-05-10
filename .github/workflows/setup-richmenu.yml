@@ -1,0 +1,36 @@
+# 在 GitHub 設定 Variables：PUBLIC_APP_URL（https 網址）
+# 在 GitHub 設定 Secrets：CHANNEL_DAILY_HEALTH_CHECK_ACCESS_TOKEN
+# 然後 Actions → 本 workflow → Run workflow
+
+name: Setup LINE Rich Menu
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-richmenu:
+    runs-on: ubuntu-latest
+    env:
+      CHANNEL_Daily_Health_Check_ACCESS_TOKEN: ${{ secrets.CHANNEL_DAILY_HEALTH_CHECK_ACCESS_TOKEN }}
+      PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install native deps for node-canvas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
+      - name: Install npm packages
+        run: npm ci
+
+      - name: Generate richmenu.png
+        run: npm run generate-richmenu
+
+      - name: Upload Rich Menu to LINE
+        run: npm run setup-richmenu

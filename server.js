@@ -16,8 +16,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, 'public');
 
-const ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-const CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET;
+const ACCESS_TOKEN = (
+  process.env.CHANNEL_Daily_Health_Check_ACCESS_TOKEN
+  || process.env.LINE_CHANNEL_ACCESS_TOKEN
+  || ''
+).trim();
+const CHANNEL_SECRET = (
+  process.env.CHANNEL_Daily_Health_Check_SECRET
+  || process.env.LINE_CHANNEL_SECRET
+  || ''
+).trim();
 
 app.use(express.json({
   verify: (req, _res, buf) => { req.rawBody = buf; },
@@ -90,7 +98,7 @@ async function handleMessage(ev) {
 
 function lineRequest(path, body) {
   if (!ACCESS_TOKEN) {
-    console.error('[line] 缺少 LINE_CHANNEL_ACCESS_TOKEN');
+    console.error('[line] 缺少 CHANNEL_Daily_Health_Check_ACCESS_TOKEN（或 LINE_CHANNEL_ACCESS_TOKEN）');
     return Promise.resolve(null);
   }
   return new Promise((resolve, reject) => {

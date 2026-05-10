@@ -30,10 +30,10 @@
   <title>每日健康打卡</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
+<body class="tab-theme-checkin">
   <header class="app-header">
     <h1>每日健康打卡</h1>
-    <p>本機伺服器 SQLite 儲存 · 衛教參考非醫療診斷<span class="badge-offline">離線模式</span></p>
+    <p>資料僅存在此手機／瀏覽器（IndexedDB）· 衛教參考非醫療診斷<span class="badge-offline">離線模式</span></p>
   </header>
 
   <div id="helpBanner" class="help-banner" hidden>
@@ -42,7 +42,7 @@
       <ul>
         <li><strong>打卡</strong>：填寫血壓、血糖時機（空腹／飯後）、血糖數值與運動，送出後可見衛教建議（僅供參考，非醫療診斷）。</li>
         <li><strong>紀錄</strong>：依紀錄時間排序；血壓、血糖、運動分開顯示，可單筆或全部摘要分享到 LINE。</li>
-        <li><strong>個人設定</strong>：年齡與性別；提醒可同步伺服器並搭配瀏覽器通知（須允許通知）。LINE 定時推播僅適用已加 Bot 好友的 LINE 用戶。</li>
+        <li><strong>個人設定</strong>：年齡與性別、每日提醒皆只存在此裝置；提醒搭配瀏覽器通知（須允許通知）。LINE Bot 聊天資料仍由伺服器處理，與 PWA 不互通。</li>
         <li><strong>LINE Bot</strong>：聊天室可輸入「健康」查看文字指令；與 PWA 資料不互通。</li>
       </ul>
       <button type="button" class="btn btn-primary" id="btnCloseHelp">關閉教學</button>
@@ -58,7 +58,7 @@
 
     <div id="panel-checkin" class="tab-panel" role="tabpanel" aria-labelledby="tab-checkin">
     <p class="disclaimer">
-      資料經由此裝置連線至你的伺服器並寫入本機資料庫。個人資料與提醒請至「個人設定」；紀錄可於「紀錄」分頁以 LINE 分享。
+      打卡與個檔只寫入此裝置瀏覽器的 IndexedDB，不會上傳到本專案伺服器。主動按「LINE 分享」時才會把文字貼到 LINE。個人資料與提醒請至「個人設定」。
     </p>
 
     <section class="card" id="section-checkin">
@@ -131,20 +131,20 @@
 
     <section class="card" id="section-reminder">
       <h2>提醒</h2>
-      <p class="status">瀏覽器通知時間為台北時區；需曾開啟此頁並允許通知。伺服器端 LINE 推播僅適用 LINE Bot 綁定之用戶。</p>
+      <p class="status">瀏覽器通知時間為台北時區；需曾開啟此頁並允許通知。設定僅存此裝置。若使用 LINE Bot 聊天打卡，該資料仍由伺服器處理，與本 PWA 無關。</p>
       <label>
         <input type="checkbox" id="reminderEnabled" />
         啟用每日提醒（本機通知）
       </label>
       <label for="reminderTime">時間</label>
       <input type="time" id="reminderTime" />
-      <button type="button" class="btn btn-primary" id="btnSaveReminder">同步提醒設定到伺服器</button>
+      <button type="button" class="btn btn-primary" id="btnSaveReminder">儲存提醒設定（本機）</button>
       <button type="button" class="btn btn-ghost" id="btnNotifyPermission">請求通知權限</button>
       <p class="status" id="reminderStatus"></p>
     </section>
     </div>
   </main>
 
-  <script src="/app.js" defer></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

@@ -26,14 +26,50 @@ body {
   color: var(--text);
   line-height: 1.5;
   padding-bottom: 2rem;
+  transition:
+    background 0.55s ease,
+    background-color 0.55s ease;
+}
+
+/* 分頁主題：背景漸層 + 強調色（按鈕、標題、區塊） */
+body.tab-theme-checkin {
+  --accent: #2d7856;
+  --accent-dim: #e8f2ec;
+  background: linear-gradient(165deg, #cde8db 0%, #dff0e8 28%, #ecf5f0 62%, #f4f7f5 100%);
+}
+
+body.tab-theme-records {
+  --accent: #3568a8;
+  --accent-dim: #e3eaf6;
+  background: linear-gradient(165deg, #c5d8f2 0%, #dce7f7 30%, #e9f0fb 65%, #f3f6fc 100%);
+}
+
+body.tab-theme-settings {
+  --accent: #9a5b2d;
+  --accent-dim: #f3e8dd;
+  background: linear-gradient(165deg, #edd9c8 0%, #f2e4d6 30%, #f8efe6 65%, #fcf9f5 100%);
 }
 
 header.app-header {
-  background: linear-gradient(135deg, #2d7856 0%, #1e5c42 100%);
   color: #fff;
   padding: 1.25rem 1.25rem 1.5rem;
   border-radius: 0 0 var(--radius) var(--radius);
+  transition: background 0.55s ease, box-shadow 0.55s ease;
+}
+
+body.tab-theme-checkin header.app-header {
+  background: linear-gradient(135deg, #2d7856 0%, #1e5c42 100%);
   box-shadow: 0 4px 20px rgba(30, 92, 66, 0.25);
+}
+
+body.tab-theme-records header.app-header {
+  background: linear-gradient(135deg, #3a6db5 0%, #254878 100%);
+  box-shadow: 0 4px 20px rgba(37, 72, 120, 0.28);
+}
+
+body.tab-theme-settings header.app-header {
+  background: linear-gradient(135deg, #a86532 0%, #6d3f20 100%);
+  box-shadow: 0 4px 20px rgba(109, 63, 32, 0.28);
 }
 
 header.app-header h1 {

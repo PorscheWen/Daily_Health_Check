@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
-    "canvas": "^3.2.3",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
     "node-cron": "^3.0.3"
   },
+  "devDependencies": {
+    "canvas": "^3.2.3"
+  },
   "engines": {
-    "node": ">=18"
+    "node": ">=18 <26"
   }
 }

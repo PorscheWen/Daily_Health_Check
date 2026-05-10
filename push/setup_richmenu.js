@@ -4,11 +4,18 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const fs = require('fs');
 const path = require('path');
 
-const ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const ACCESS_TOKEN = (
+  process.env.CHANNEL_Daily_Health_Check_ACCESS_TOKEN
+  || process.env.LINE_CHANNEL_ACCESS_TOKEN
+  || ''
+).trim();
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || '').trim();
 
 if (!ACCESS_TOKEN) {
-  console.error('[setup-richmenu] 缺少 LINE_CHANNEL_ACCESS_TOKEN');
+  console.error(
+    '[setup-richmenu] 缺少 Channel access token：請在 .env 設定 CHANNEL_Daily_Health_Check_ACCESS_TOKEN',
+    '（或相容舊名 LINE_CHANNEL_ACCESS_TOKEN）',
+  );
   process.exit(1);
 }
 if (!PUBLIC_APP_URL || !/^https:\/\//i.test(PUBLIC_APP_URL)) {
@@ -34,17 +41,29 @@ const cellW = Math.floor(W / COLS);
 const cellH = Math.floor(gridH / ROWS);
 
 async function lineApi(method, endpoint, body) {
+  const headers = { Authorization: `Bearer ${ACCESS_TOKEN}` };
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(`https://api.line.me${endpoint}`, {
     method,
-    headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`LINE API ${res.status}: ${text}`);
   return text ? JSON.parse(text) : {};
+}
+
+/** 取消「全體預設 Rich Menu」連結（404 視為本來就沒有） */
+async function unlinkDefaultRichMenuAll() {
+  const res = await fetch('https://api.line.me/v2/bot/user/all/richmenu', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+  });
+  if (res.status === 404) return;
+  const text = await res.text();
+  if (!res.ok) throw new Error(`取消預設 Rich Menu 失敗 ${res.status}: ${text}`);
 }
 
 async function uploadImage(richMenuId) {
@@ -65,17 +84,21 @@ async function uploadImage(richMenuId) {
 }
 
 async function main() {
+  await unlinkDefaultRichMenuAll();
+  console.log('[setup-richmenu] 已取消舊的「全體預設」連結（若存在）');
+
   const { richmenus = [] } = await lineApi('GET', '/v2/bot/richmenu/list');
   for (const rm of richmenus) {
     await lineApi('DELETE', `/v2/bot/richmenu/${rm.richMenuId}`);
-    console.log(`[setup-richmenu] 刪除舊 Rich Menu: ${rm.richMenuId}`);
+    console.log(`[setup-richmenu] 刪除舊 Rich Menu 定義: ${rm.richMenuId}`);
   }
 
+  /** chatBarText 最多 14 字元（LINE 限制） */
   const { richMenuId } = await lineApi('POST', '/v2/bot/richmenu', {
     size: { width: W, height: H },
     selected: true,
     name: 'Daily_Health_Check｜教學與分頁',
-    chatBarText: '🏥 健康打卡選單',
+    chatBarText: '健康打卡',
     areas: [
       {
         bounds: { x: 0, y: gridTop, width: cellW, height: cellH },
@@ -101,8 +124,17 @@ async function main() {
   console.log('[setup-richmenu] 圖片上傳完成');
 
   await lineApi('POST', `/v2/bot/user/all/richmenu/${richMenuId}`);
-  console.log('[setup-richmenu] 已套用至所有用戶');
+  console.log('[setup-richmenu] 已設為全體預設 Rich Menu');
+
+  try {
+    const linked = await lineApi('GET', '/v2/bot/user/all/richmenu');
+    console.log('[setup-richmenu] 驗證 GET /user/all/richmenu:', linked);
+  } catch (e) {
+    console.warn('[setup-richmenu] 驗證讀取失敗（可忽略）:', e.message);
+  }
+
   console.log('[setup-richmenu] 連結:', { urlHelp, urlCheckin, urlRecords, urlSettings });
+  console.log('[setup-richmenu] 若手機仍看不到：請關閉聊天室再重進、確認已加好友，並見 README「Rich Menu 疑難排解」');
 }
 
 main().catch((e) => {

@@ -1,11 +1,14 @@
 /* global self, caches */
 'use strict';
 
-const CACHE = 'daily-health-pwa-v5';
+const CACHE = 'daily-health-pwa-v7';
 
 /** 僅快取靜態資源；HTML 不預快取，避免 LINE 內建瀏覽器顯示舊頁 */
 const PRECACHE = [
   '/app.js',
+  '/local-db.js',
+  '/advice-client.js',
+  '/health-core-client.js',
   '/styles.css',
   '/manifest.webmanifest',
   '/icon-192.png',

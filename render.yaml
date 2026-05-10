@@ -1,0 +1,16 @@
+# Render Blueprint：
+# - npm ci --omit=dev：略過 canvas（node-canvas）
+# - NODE_VERSION=20：better-sqlite3 在 Node 26 常編譯失敗，請鎖定 20 LTS
+# 手動建立服務時：Dashboard → Environment 務必新增 NODE_VERSION=20（否則預設可能是 26）
+# https://render.com/docs/node-version
+
+services:
+  - type: web
+    name: daily-health-check
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

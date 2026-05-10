@@ -1,8 +1,14 @@
 /* global navigator, window, document, caches */
 'use strict';
 
-const STORAGE_USER = 'dailyHealthPwaUserId';
+import { buildAdvice, timingLabel } from './advice-client.js';
+import { validateCheckinBody, normalizeGender } from './health-core-client.js';
+import { openDb, getProfile, putProfile, addCheckin, listCheckins } from './local-db.js';
+
 const STORAGE_REMINDER_LAST = 'dailyHealthReminderNotifiedYmd';
+
+/** @type {IDBDatabase | undefined} */
+let db;
 
 /** @type {Array<object>} */
 let lastHistoryRows = [];
@@ -32,10 +38,19 @@ function taipeiHHmm() {
   return `${String(parseInt(m[1], 10)).padStart(2, '0')}:${m[2]}`;
 }
 
-function timingLabel(v) {
-  if (v === 'fasting') return '空腹／餐前';
-  if (v === 'postmeal') return '飯後';
-  return '未註記';
+function formatTaipeiDateTime(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n)) return '';
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date(n));
 }
 
 function buildRecordShareText(r) {
@@ -73,40 +88,6 @@ function openLineShareText(text) {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-async function getOrCreateUserId() {
-  let id = localStorage.getItem(STORAGE_USER);
-  if (id && /^web:[0-9a-f-]{36}$/i.test(id)) return id;
-  const r = await fetch('/api/pwa/new-id');
-  const j = await r.json();
-  if (!j.ok || !j.userId) throw new Error('無法取得使用者 ID');
-  localStorage.setItem(STORAGE_USER, j.userId);
-  return j.userId;
-}
-
-async function api(path, options = {}) {
-  const userId = await getOrCreateUserId();
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-Web-User-Id': userId,
-    ...(options.headers || {}),
-  };
-  const r = await fetch(path, { ...options, headers });
-  const text = await r.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = { ok: false, error: 'bad_json', raw: text };
-  }
-  if (!r.ok) {
-    const err = new Error(data.error || `http_${r.status}`);
-    err.data = data;
-    err.status = r.status;
-    throw err;
-  }
-  return data;
-}
-
 function setText(id, msg, isErr) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -118,62 +99,104 @@ function updateOfflineBadge() {
   document.body.classList.toggle('offline', !navigator.onLine);
 }
 
+function profileForAdvice(p) {
+  if (!p || !p.age || !p.gender) return null;
+  return { age: p.age, gender: p.gender };
+}
+
 async function loadMe() {
-  const data = await api('/api/pwa/me');
-  document.getElementById('todayLabel').textContent = `伺服器今日日期（台北）：${data.today}`;
-  if (data.profile) {
-    document.getElementById('age').value = data.profile.age;
-    document.getElementById('gender').value = data.profile.gender;
-    document.getElementById('reminderEnabled').checked = !!data.profile.reminderEnabled;
-    if (data.profile.reminderHhmm) {
-      document.getElementById('reminderTime').value = data.profile.reminderHhmm;
+  if (!db) return;
+  const profile = await getProfile(db);
+  document.getElementById('todayLabel').textContent = `今日日期（台北）：${taipeiYmd()}`;
+  if (profile) {
+    document.getElementById('age').value = profile.age ?? '';
+    document.getElementById('gender').value = profile.gender ?? '';
+    document.getElementById('reminderEnabled').checked = !!profile.reminderEnabled;
+    if (profile.reminderHhmm) {
+      document.getElementById('reminderTime').value = profile.reminderHhmm;
     }
   }
 }
 
 async function saveProfile() {
+  if (!db) {
+    setText('profileStatus', '本機資料庫未就緒。', true);
+    return;
+  }
   const age = parseInt(document.getElementById('age').value, 10);
-  const gender = document.getElementById('gender').value;
+  const gender = normalizeGender(document.getElementById('gender').value);
   if (!age || !gender) {
     setText('profileStatus', '請填年齡與性別。', true);
     return;
   }
-  await api('/api/pwa/profile', {
-    method: 'PUT',
-    body: JSON.stringify({ age, gender }),
+  const prev = (await getProfile(db)) || {};
+  await putProfile(db, {
+    ...prev,
+    age,
+    gender,
   });
-  setText('profileStatus', '個檔已儲存。');
+  setText('profileStatus', '個檔已儲存在此裝置（不上傳伺服器）。');
 }
 
 async function submitCheckin() {
-  const systolic = parseInt(document.getElementById('sys').value, 10);
-  const diastolic = parseInt(document.getElementById('dia').value, 10);
-  const bloodSugar = parseFloat(document.getElementById('glucose').value);
-  const exerciseText = document.getElementById('exercise').value.trim() || '無';
-  const glucoseTiming = document.getElementById('timing').value;
-  try {
-    const data = await api('/api/pwa/checkin', {
-      method: 'POST',
-      body: JSON.stringify({
-        systolic,
-        diastolic,
-        bloodSugar,
-        exerciseText,
-        glucoseTiming,
-      }),
-    });
-    document.getElementById('adviceOut').textContent = data.advice || '';
-    setText('checkinStatus', `已記錄 ${data.date}（${data.timingLabel || ''}）`);
-    loadHistory();
-  } catch (e) {
-    setText('checkinStatus', e.data?.error === 'invalid_checkin' ? '請檢查血壓、血糖與運動欄位。' : (e.message || '失敗'), true);
+  if (!db) {
+    setText('checkinStatus', '本機資料庫未就緒。', true);
+    return;
   }
+  const body = {
+    systolic: parseInt(document.getElementById('sys').value, 10),
+    diastolic: parseInt(document.getElementById('dia').value, 10),
+    bloodSugar: parseFloat(document.getElementById('glucose').value),
+    exerciseText: document.getElementById('exercise').value.trim() || '無',
+    glucoseTiming: document.getElementById('timing').value,
+  };
+  const parsed = validateCheckinBody(body);
+  if (!parsed) {
+    setText('checkinStatus', '請檢查血壓、血糖與運動欄位。', true);
+    return;
+  }
+  const profile = profileForAdvice(await getProfile(db));
+  const date = taipeiYmd();
+  const created_at = Date.now();
+  await addCheckin(db, {
+    checkin_date: date,
+    systolic: parsed.systolic,
+    diastolic: parsed.diastolic,
+    blood_sugar: parsed.bloodSugar,
+    exercise_text: parsed.exerciseText,
+    glucose_timing: parsed.glucoseTiming,
+    created_at,
+  });
+  document.getElementById('adviceOut').textContent = buildAdvice({
+    profile,
+    systolic: parsed.systolic,
+    diastolic: parsed.diastolic,
+    bloodSugar: parsed.bloodSugar,
+    exerciseText: parsed.exerciseText,
+    glucoseTiming: parsed.glucoseTiming,
+  });
+  setText('checkinStatus', `已記錄 ${date}（${timingLabel(parsed.glucoseTiming)}）· 僅存此裝置`);
+  loadHistory();
 }
 
 async function loadHistory() {
+  if (!db) {
+    lastHistoryRows = [];
+    setText('historyStatus', '本機資料庫未就緒。', true);
+    return;
+  }
   try {
-    const data = await api('/api/pwa/history?limit=30');
-    const rows = [...(data.rows || [])].sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0));
+    const rowsRaw = await listCheckins(db, 30);
+    const rows = rowsRaw.map((r) => ({
+      checkin_date: r.checkin_date,
+      systolic: r.systolic,
+      diastolic: r.diastolic,
+      blood_sugar: r.blood_sugar,
+      exercise_text: r.exercise_text,
+      glucose_timing: r.glucose_timing,
+      created_at: r.created_at,
+      recorded_at_taipei: formatTaipeiDateTime(r.created_at),
+    }));
     lastHistoryRows = rows;
     const container = document.getElementById('historyList');
     container.innerHTML = '';
@@ -211,7 +234,7 @@ async function loadHistory() {
     setText('historyStatus', rows.length ? '' : '尚無紀錄');
   } catch (e) {
     lastHistoryRows = [];
-    setText('historyStatus', '無法載入紀錄（離線？）', true);
+    setText('historyStatus', '無法讀取本機紀錄。', true);
   }
 }
 
@@ -230,25 +253,26 @@ function hhmmFromTimeInput(val) {
 }
 
 async function saveReminder() {
+  if (!db) {
+    setText('reminderStatus', '本機資料庫未就緒。', true);
+    return;
+  }
   const enabled = document.getElementById('reminderEnabled').checked;
   const hhmm = hhmmFromTimeInput(document.getElementById('reminderTime').value);
   if (enabled && !hhmm) {
     setText('reminderStatus', '請選擇提醒時間。', true);
     return;
   }
-  try {
-    await api('/api/pwa/reminder', {
-      method: 'PUT',
-      body: JSON.stringify({ enabled, hhmm: hhmm || '08:00' }),
-    });
-    setText('reminderStatus', enabled ? `已同步：每日 ${hhmm}（台北）` : '已關閉伺服器端提醒（LINE 推播不適用於 PWA 帳號）。');
-  } catch (e) {
-    if (e.status === 400 && e.data?.error === 'need_profile') {
-      setText('reminderStatus', '請先儲存個檔。', true);
-    } else {
-      setText('reminderStatus', '同步失敗', true);
-    }
-  }
+  const prev = (await getProfile(db)) || {};
+  await putProfile(db, {
+    ...prev,
+    reminderEnabled: enabled,
+    reminderHhmm: enabled ? (hhmm || '08:00') : (prev.reminderHhmm || null),
+  });
+  setText(
+    'reminderStatus',
+    enabled ? `已儲存：每日 ${hhmm || '08:00'}（台北）本機通知 · 資料未上傳` : '已關閉本機每日提醒。',
+  );
 }
 
 function maybeFireLocalNotification(enabled, hhmm) {
@@ -298,7 +322,14 @@ function showHelpBanner() {
   }
 }
 
+function setTabTheme(tab) {
+  const key = tab === 'records' || tab === 'settings' ? tab : 'checkin';
+  document.body.classList.remove('tab-theme-checkin', 'tab-theme-records', 'tab-theme-settings');
+  document.body.classList.add('tab-theme-' + key);
+}
+
 function selectTab(tab) {
+  setTabTheme(tab);
   const buttons = document.querySelectorAll('.tab-btn');
   const panels = {
     checkin: document.getElementById('panel-checkin'),
@@ -373,7 +404,7 @@ document.getElementById('btnSaveProfile').addEventListener('click', () => {
 });
 
 document.getElementById('btnCheckin').addEventListener('click', () => {
-  submitCheckin();
+  submitCheckin().catch((e) => setText('checkinStatus', e.message || '失敗', true));
 });
 
 document.getElementById('btnRefreshHistory').addEventListener('click', () => {
@@ -389,7 +420,7 @@ document.getElementById('btnShareAllLine').addEventListener('click', () => {
 });
 
 document.getElementById('btnSaveReminder').addEventListener('click', () => {
-  saveReminder();
+  saveReminder().catch((e) => setText('reminderStatus', e.message || '失敗', true));
 });
 
 document.getElementById('btnNotifyPermission').addEventListener('click', async () => {
@@ -405,7 +436,6 @@ window.addEventListener('online', updateOfflineBadge);
 window.addEventListener('offline', updateOfflineBadge);
 updateOfflineBadge();
 
-registerSw();
 initTabs();
 initHelpClose();
 startReminderTicker();
@@ -413,11 +443,13 @@ window.addEventListener('hashchange', applyHashRouting);
 
 (async () => {
   try {
+    db = await openDb();
+    await registerSw();
     await loadMe();
     await loadHistory();
     applyHashRouting();
   } catch (e) {
-    setText('profileStatus', '無法連線伺服器，離線時可稍後再試。', true);
+    setText('profileStatus', '無法開啟本機資料庫（例如私密瀏覽）。請用一般分頁再試。', true);
     applyHashRouting();
   }
 })();

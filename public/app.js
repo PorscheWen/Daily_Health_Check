@@ -285,33 +285,87 @@ async function registerSw() {
   }
 }
 
-function initTabs() {
+function hideHelpBanner() {
+  const el = document.getElementById('helpBanner');
+  if (el) el.hidden = true;
+}
+
+function showHelpBanner() {
+  const el = document.getElementById('helpBanner');
+  if (el) {
+    el.hidden = false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function selectTab(tab) {
   const buttons = document.querySelectorAll('.tab-btn');
   const panels = {
     checkin: document.getElementById('panel-checkin'),
     records: document.getElementById('panel-records'),
     settings: document.getElementById('panel-settings'),
   };
-  buttons.forEach((btn) => {
+  buttons.forEach((b) => {
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  Object.entries(panels).forEach(([key, el]) => {
+    if (!el) return;
+    const on = key === tab;
+    if (on) el.removeAttribute('hidden');
+    else el.setAttribute('hidden', '');
+  });
+  if (tab === 'records') loadHistory();
+  if (tab === 'settings') loadMe().catch(() => {});
+}
+
+function applyHashRouting() {
+  const raw = (location.hash || '').replace(/^#/, '').trim().toLowerCase();
+  if (raw === 'help') {
+    showHelpBanner();
+    selectTab('checkin');
+    return;
+  }
+  hideHelpBanner();
+  if (raw === 'records') {
+    selectTab('records');
+    return;
+  }
+  if (raw === 'settings') {
+    selectTab('settings');
+    return;
+  }
+  if (raw === 'checkin' || raw === '') {
+    selectTab('checkin');
+    return;
+  }
+  selectTab('checkin');
+}
+
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      buttons.forEach((b) => {
-        const on = b === btn;
-        b.classList.toggle('is-active', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      Object.entries(panels).forEach(([key, el]) => {
-        if (!el) return;
-        const on = key === tab;
-        if (on) el.removeAttribute('hidden');
-        else el.setAttribute('hidden', '');
-      });
-      if (tab === 'records') loadHistory();
-      if (tab === 'settings') {
-        loadMe().catch(() => {});
+      hideHelpBanner();
+      if (history.replaceState) {
+        history.replaceState(null, '', `${location.pathname}${location.search}#${btn.dataset.tab}`);
       }
+      selectTab(btn.dataset.tab);
     });
   });
+}
+
+function initHelpClose() {
+  const btn = document.getElementById('btnCloseHelp');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      hideHelpBanner();
+      if (history.replaceState) {
+        history.replaceState(null, '', `${location.pathname}${location.search}#checkin`);
+      }
+      selectTab('checkin');
+    });
+  }
 }
 
 document.getElementById('btnSaveProfile').addEventListener('click', () => {
@@ -353,13 +407,17 @@ updateOfflineBadge();
 
 registerSw();
 initTabs();
+initHelpClose();
 startReminderTicker();
+window.addEventListener('hashchange', applyHashRouting);
 
 (async () => {
   try {
     await loadMe();
     await loadHistory();
+    applyHashRouting();
   } catch (e) {
     setText('profileStatus', '無法連線伺服器，離線時可稍後再試。', true);
+    applyHashRouting();
   }
 })();

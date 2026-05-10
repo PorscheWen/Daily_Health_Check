@@ -301,3 +301,38 @@ textarea {
 body.offline .badge-offline {
   display: inline;
 }
+
+.help-banner {
+  max-width: 520px;
+  margin: 0.5rem auto 0;
+  padding: 0 1rem;
+}
+
+.help-banner-inner {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem 1.15rem;
+  color: var(--text);
+}
+
+.help-banner-inner h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  color: #1565c0;
+}
+
+.help-banner-inner ul {
+  margin: 0 0 0.85rem;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.help-banner-inner li {
+  margin-bottom: 0.35rem;
+}
+
+.help-banner-inner .btn {
+  margin-top: 0.25rem;
+}

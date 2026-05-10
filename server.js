@@ -32,7 +32,22 @@ app.use((_req, res, next) => {
 });
 
 app.use('/api/pwa', pwaApi);
-app.use(express.static(publicDir, { index: 'index.html', extensions: ['html'] }));
+app.use(express.static(publicDir, {
+  index: 'index.html',
+  extensions: ['html'],
+  setHeaders(res, filePath) {
+    const norm = String(filePath || '').replace(/\\/g, '/').toLowerCase();
+    if (norm.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (norm.endsWith('sw.js')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (norm.endsWith('manifest.webmanifest')) {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    }
+  },
+}));
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'daily-health-check' }));
 

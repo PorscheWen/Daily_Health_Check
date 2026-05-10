@@ -5,10 +5,13 @@
   "description": "LINE Bot：每日健康打卡（本機 SQLite）",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "generate-richmenu": "node push/generate_richmenu.js",
+    "setup-richmenu": "node push/setup_richmenu.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
+    "canvas": "^3.2.3",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
     "node-cron": "^3.0.3"

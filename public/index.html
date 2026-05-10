@@ -3,8 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="theme-color" content="#2d7856" />
   <meta name="description" content="每日健康打卡 PWA" />
+  <script>
+    (function () {
+      window.addEventListener('pageshow', function (e) {
+        if (e.persisted) location.reload();
+      });
+      if (!/Line\//i.test(navigator.userAgent || '')) return;
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'visible') {
+          window.__dhLineHiddenAt = Date.now();
+          return;
+        }
+        var t = window.__dhLineHiddenAt;
+        if (t && Date.now() - t > 120000) location.reload();
+      });
+    })();
+  </script>
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -16,6 +35,19 @@
     <h1>每日健康打卡</h1>
     <p>本機伺服器 SQLite 儲存 · 衛教參考非醫療診斷<span class="badge-offline">離線模式</span></p>
   </header>
+
+  <div id="helpBanner" class="help-banner" hidden>
+    <div class="help-banner-inner">
+      <h3>使用教學</h3>
+      <ul>
+        <li><strong>打卡</strong>：填寫血壓、血糖時機（空腹／飯後）、血糖數值與運動，送出後可見衛教建議（僅供參考，非醫療診斷）。</li>
+        <li><strong>紀錄</strong>：依紀錄時間排序；血壓、血糖、運動分開顯示，可單筆或全部摘要分享到 LINE。</li>
+        <li><strong>個人設定</strong>：年齡與性別；提醒可同步伺服器並搭配瀏覽器通知（須允許通知）。LINE 定時推播僅適用已加 Bot 好友的 LINE 用戶。</li>
+        <li><strong>LINE Bot</strong>：聊天室可輸入「健康」查看文字指令；與 PWA 資料不互通。</li>
+      </ul>
+      <button type="button" class="btn btn-primary" id="btnCloseHelp">關閉教學</button>
+    </div>
+  </div>
 
   <main>
     <nav class="tab-bar" role="tablist" aria-label="主要分頁">

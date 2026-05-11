@@ -26,6 +26,7 @@ const CHANNEL_SECRET = (
   || process.env.LINE_CHANNEL_SECRET
   || ''
 ).trim();
+const PWA_URL = (process.env.PUBLIC_APP_URL || '').trim();
 
 app.use(express.json({
   verify: (req, _res, buf) => { req.rawBody = buf; },
@@ -87,13 +88,18 @@ async function handleMessage(ev) {
     if (handled) return;
   }
 
-  await lineReply(ev.replyToken, [{
-    type: 'text',
-    text: [
-      '請輸入「健康」查看說明。',
-      '或輸入「開始打卡」逐步填寫。',
-    ].join('\n'),
-  }]);
+  const fallbackLines = [
+    '請輸入「健康」查看說明。',
+    '或輸入「開始打卡」逐步填寫。',
+  ];
+  if (PWA_URL) {
+    fallbackLines.push(
+      '',
+      `📱 PWA 網頁版：${PWA_URL}`,
+      '（若介面未更新，請下拉刷新或重新整理網頁）',
+    );
+  }
+  await lineReply(ev.replyToken, [{ type: 'text', text: fallbackLines.join('\n') }]);
 }
 
 function lineRequest(path, body) {

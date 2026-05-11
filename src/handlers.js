@@ -87,7 +87,7 @@ async function finalizeCheckin(userId, parsed, reply) {
 }
 
 async function handleReminderCommand(userId, t, reply) {
-  if (t !== '提醒' && !/^提醒/u.test(t)) return false;
+  if (!/^提醒/u.test(t)) return false;
 
   const rest = t.replace(/^\s*提醒\s*/u, '').trim();
 
@@ -283,5 +283,4 @@ async function tryHandleHealth({ userId, text, reply }) {
 
 module.exports = {
   tryHandleHealth,
-  HELP_TEXT,
 };

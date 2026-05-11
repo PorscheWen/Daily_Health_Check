@@ -9,8 +9,8 @@ const dbPath = process.env.HEALTH_DB_PATH || path.join(dataDir, 'health.sqlite')
 
 let db;
 
-function migrate(getDbInstance) {
-  const d = getDbInstance;
+function migrate(dbInstance) {
+  const d = dbInstance;
   const cols = d.prepare('PRAGMA table_info(user_profile)').all().map((c) => c.name);
   if (!cols.includes('reminder_hhmm')) {
     d.exec('ALTER TABLE user_profile ADD COLUMN reminder_hhmm TEXT');
@@ -188,7 +188,7 @@ function getConversation(userId) {
   const row = getDb().prepare('SELECT user_id, flow, step, payload, updated_at FROM conversation_state WHERE user_id = ?').get(userId);
   if (!row) return null;
   let payload = {};
-  try { payload = JSON.parse(row.payload || '{}'); } catch (_) {}
+  try { payload = JSON.parse(row.payload || '{}'); } catch (_) { }
   return { ...row, payload };
 }
 

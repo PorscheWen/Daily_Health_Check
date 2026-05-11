@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -24,16 +25,29 @@
       });
     })();
   </script>
+  <script>
+    (function () {
+      try { var fs = localStorage.getItem('dhFontSize') || 'medium'; document.documentElement.setAttribute('data-fs', fs); } catch (_) { }
+    })();
+  </script>
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <title>每日健康打卡</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
+
 <body class="tab-theme-checkin">
   <header class="app-header">
-    <h1>每日健康打卡</h1>
-    <p>資料僅存在此手機／瀏覽器（IndexedDB）· 衛教參考非醫療診斷<span class="badge-offline">離線模式</span></p>
+    <div class="app-header-top">
+      <h1>每日健康打卡</h1>
+      <div class="font-size-ctrl" aria-label="字體大小">
+        <button type="button" class="fs-btn" data-fs="small">小</button>
+        <button type="button" class="fs-btn is-active" data-fs="medium">中</button>
+        <button type="button" class="fs-btn" data-fs="large">大</button>
+      </div>
+    </div>
+    <p>記錄血壓・血糖・運動強度，追蹤每日健康狀況<span class="badge-offline">離線模式</span></p>
   </header>
 
   <div id="helpBanner" class="help-banner" hidden>
@@ -51,100 +65,114 @@
 
   <main>
     <nav class="tab-bar" role="tablist" aria-label="主要分頁">
-      <button type="button" class="tab-btn is-active" role="tab" id="tab-checkin" aria-selected="true" aria-controls="panel-checkin" data-tab="checkin">打卡</button>
-      <button type="button" class="tab-btn" role="tab" id="tab-records" aria-selected="false" aria-controls="panel-records" data-tab="records">紀錄</button>
-      <button type="button" class="tab-btn" role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings" data-tab="settings">個人設定</button>
+      <button type="button" class="tab-btn is-active" role="tab" id="tab-checkin" aria-selected="true"
+        aria-controls="panel-checkin" data-tab="checkin">打卡</button>
+      <button type="button" class="tab-btn" role="tab" id="tab-records" aria-selected="false"
+        aria-controls="panel-records" data-tab="records">紀錄</button>
+      <button type="button" class="tab-btn" role="tab" id="tab-settings" aria-selected="false"
+        aria-controls="panel-settings" data-tab="settings">個人設定</button>
     </nav>
 
     <div id="panel-checkin" class="tab-panel" role="tabpanel" aria-labelledby="tab-checkin">
-    <p class="disclaimer">
-      打卡與個檔只寫入此裝置瀏覽器的 IndexedDB，不會上傳到本專案伺服器。主動按「LINE 分享」時才會把文字貼到 LINE。個人資料與提醒請至「個人設定」。
-    </p>
+      <p class="disclaimer">
+        打卡與個檔只寫入此裝置瀏覽器的 IndexedDB，不會上傳到本專案伺服器。主動按「LINE 分享」時才會把文字貼到 LINE。個人資料與提醒請至「個人設定」。
+      </p>
 
-    <section class="card" id="section-checkin">
-      <h2>今日打卡</h2>
-      <p class="status" id="todayLabel"></p>
-      <div class="row2">
-        <div>
-          <label for="sys">收縮壓</label>
-          <input type="number" id="sys" min="60" max="260" placeholder="mmHg" />
+      <section class="card" id="section-checkin">
+        <h2>今日打卡</h2>
+        <p class="status" id="todayLabel"></p>
+        <div class="row2">
+          <div>
+            <label for="sys">收縮壓</label>
+            <input type="number" id="sys" min="60" max="260" placeholder="mmHg" />
+          </div>
+          <div>
+            <label for="dia">舒張壓</label>
+            <input type="number" id="dia" min="30" max="200" placeholder="mmHg" />
+          </div>
         </div>
-        <div>
-          <label for="dia">舒張壓</label>
-          <input type="number" id="dia" min="30" max="200" placeholder="mmHg" />
-        </div>
-      </div>
-      <label for="timing">血糖時機</label>
-      <select id="timing">
-        <option value="unknown">未註記</option>
-        <option value="fasting">空腹／餐前</option>
-        <option value="postmeal">飯後</option>
-      </select>
-      <label for="glucose">血糖（mg/dL）</label>
-      <input type="number" id="glucose" min="20" max="600" step="0.1" placeholder="例：95" />
-      <label for="exercise">運動習慣</label>
-      <textarea id="exercise" placeholder="例：飯後散步20分鐘；若無可填「無」"></textarea>
-      <button type="button" class="btn btn-primary" id="btnCheckin">送出打卡</button>
-      <p class="status" id="checkinStatus"></p>
-    </section>
+        <label for="timing">血糖時機</label>
+        <select id="timing">
+          <option value="unknown">未註記</option>
+          <option value="fasting">空腹／餐前</option>
+          <option value="postmeal">飯後</option>
+        </select>
+        <label for="glucose">血糖（mg/dL）</label>
+        <input type="number" id="glucose" min="20" max="600" step="0.1" placeholder="例：95" />
+        <label for="exercise">運動強度</label>
+        <select id="exercise">
+          <option value="無">無運動</option>
+          <option value="低強度">低強度</option>
+          <option value="中強度" selected>中強度</option>
+          <option value="高強度">高強度</option>
+        </select>
+        <p class="exercise-hint">
+          <strong>低強度</strong>：散步、伸展、瑜珈等輕度活動（心跳稍加快）<br>
+          <strong>中強度</strong>：快走、騎自行車、游泳等（呼吸加速、微出汗）<br>
+          <strong>高強度</strong>：跑步、有氧課程、球類運動等（大量出汗、難以持續對話）
+        </p>
+        <button type="button" class="btn btn-primary" id="btnCheckin">送出打卡</button>
+        <p class="status" id="checkinStatus"></p>
+      </section>
 
-    <section class="card" id="section-advice">
-      <h2>衛教建議</h2>
-      <div id="adviceOut">送出打卡後會顯示於此。</div>
-    </section>
+      <section class="card" id="section-advice">
+        <h2>衛教建議</h2>
+        <div id="adviceOut">送出打卡後會顯示於此。</div>
+      </section>
     </div>
 
     <div id="panel-records" class="tab-panel" role="tabpanel" aria-labelledby="tab-records" hidden>
-    <section class="card" id="section-history">
-      <h2>健康紀錄</h2>
-      <p class="status subtle">依<strong>紀錄時間</strong>新到舊排序（台北時區）。</p>
-      <div class="history-actions">
-        <button type="button" class="btn btn-ghost btn-inline" id="btnRefreshHistory">重新整理</button>
-        <button type="button" class="btn btn-line btn-inline" id="btnShareAllLine">LINE 分享全部摘要</button>
-      </div>
-      <div class="history-cards" id="historyList"></div>
-      <p class="status" id="historyStatus"></p>
-    </section>
+      <section class="card" id="section-history">
+        <h2>健康紀錄</h2>
+        <p class="status subtle">依<strong>紀錄時間</strong>新到舊排序（台北時區）。</p>
+        <div class="history-actions">
+          <button type="button" class="btn btn-ghost btn-inline" id="btnRefreshHistory">重新整理</button>
+          <button type="button" class="btn btn-line btn-inline" id="btnShareAllLine">LINE 分享全部摘要</button>
+        </div>
+        <div class="history-cards" id="historyList"></div>
+        <p class="status" id="historyStatus"></p>
+      </section>
     </div>
 
     <div id="panel-settings" class="tab-panel" role="tabpanel" aria-labelledby="tab-settings" hidden>
-    <section class="card" id="section-profile">
-      <h2>個人資料</h2>
-      <div class="row2">
-        <div>
-          <label for="age">年齡</label>
-          <input type="number" id="age" min="1" max="120" placeholder="例：68" />
+      <section class="card" id="section-profile">
+        <h2>個人資料</h2>
+        <div class="row2">
+          <div>
+            <label for="age">年齡</label>
+            <input type="number" id="age" min="1" max="120" placeholder="例：68" />
+          </div>
+          <div>
+            <label for="gender">性別</label>
+            <select id="gender">
+              <option value="">請選擇</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label for="gender">性別</label>
-          <select id="gender">
-            <option value="">請選擇</option>
-            <option value="男">男</option>
-            <option value="女">女</option>
-            <option value="其他">其他</option>
-          </select>
-        </div>
-      </div>
-      <button type="button" class="btn btn-primary" id="btnSaveProfile">儲存個人資料</button>
-      <p class="status" id="profileStatus"></p>
-    </section>
+        <button type="button" class="btn btn-primary" id="btnSaveProfile">儲存個人資料</button>
+        <p class="status" id="profileStatus"></p>
+      </section>
 
-    <section class="card" id="section-reminder">
-      <h2>提醒</h2>
-      <p class="status">瀏覽器通知時間為台北時區；需曾開啟此頁並允許通知。設定僅存此裝置。若使用 LINE Bot 聊天打卡，該資料仍由伺服器處理，與本 PWA 無關。</p>
-      <label>
-        <input type="checkbox" id="reminderEnabled" />
-        啟用每日提醒（本機通知）
-      </label>
-      <label for="reminderTime">時間</label>
-      <input type="time" id="reminderTime" />
-      <button type="button" class="btn btn-primary" id="btnSaveReminder">儲存提醒設定（本機）</button>
-      <button type="button" class="btn btn-ghost" id="btnNotifyPermission">請求通知權限</button>
-      <p class="status" id="reminderStatus"></p>
-    </section>
+      <section class="card" id="section-reminder">
+        <h2>提醒</h2>
+        <p class="status">瀏覽器通知時間為台北時區；需曾開啟此頁並允許通知。設定僅存此裝置。若使用 LINE Bot 聊天打卡，該資料仍由伺服器處理，與本 PWA 無關。</p>
+        <label>
+          <input type="checkbox" id="reminderEnabled" />
+          啟用每日提醒（本機通知）
+        </label>
+        <label for="reminderTime">時間</label>
+        <input type="time" id="reminderTime" />
+        <button type="button" class="btn btn-primary" id="btnSaveReminder">儲存提醒設定（本機）</button>
+        <button type="button" class="btn btn-ghost" id="btnNotifyPermission">請求通知權限</button>
+        <p class="status" id="reminderStatus"></p>
+      </section>
     </div>
   </main>
 
   <script type="module" src="/app.js"></script>
 </body>
+
 </html>

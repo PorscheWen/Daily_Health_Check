@@ -167,6 +167,7 @@ async function submitCheckin() {
     glucose_timing: parsed.glucoseTiming,
     created_at,
   });
+  saveLastCheckinValues(parsed);
   document.getElementById('adviceOut').textContent = buildAdvice({
     profile,
     systolic: parsed.systolic,
@@ -246,6 +247,55 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+// ---- 字體大小 ----
+const FS_KEY = 'dhFontSize';
+const FS_VALID = new Set(['small', 'medium', 'large']);
+
+function applyFontSize(size) {
+  const s = FS_VALID.has(size) ? size : 'medium';
+  document.documentElement.setAttribute('data-fs', s);
+  document.querySelectorAll('.fs-btn').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.dataset.fs === s);
+  });
+  try { localStorage.setItem(FS_KEY, s); } catch (_) { }
+}
+
+function initFontSize() {
+  const saved = (() => { try { return localStorage.getItem(FS_KEY); } catch (_) { return null; } })();
+  applyFontSize(saved || 'medium');
+  document.querySelectorAll('.fs-btn').forEach((btn) => {
+    btn.addEventListener('click', () => applyFontSize(btn.dataset.fs));
+  });
+}
+
+// ---- 記憶上次輸入數值 ----
+const LAST_VALS_KEY = 'dhLastCheckinVals';
+
+function saveLastCheckinValues(parsed) {
+  try {
+    localStorage.setItem(LAST_VALS_KEY, JSON.stringify({
+      sys: parsed.systolic,
+      dia: parsed.diastolic,
+      glucose: parsed.bloodSugar,
+      timing: parsed.glucoseTiming,
+      exercise: parsed.exerciseText,
+    }));
+  } catch (_) { }
+}
+
+function restoreLastCheckinValues() {
+  try {
+    const raw = localStorage.getItem(LAST_VALS_KEY);
+    if (!raw) return;
+    const v = JSON.parse(raw);
+    if (v.sys) { const el = document.getElementById('sys'); if (el) el.value = v.sys; }
+    if (v.dia) { const el = document.getElementById('dia'); if (el) el.value = v.dia; }
+    if (v.glucose) { const el = document.getElementById('glucose'); if (el) el.value = v.glucose; }
+    if (v.timing) { const el = document.getElementById('timing'); if (el) el.value = v.timing; }
+    if (v.exercise) { const el = document.getElementById('exercise'); if (el) el.value = v.exercise; }
+  } catch (_) { }
+}
+
 function hhmmFromTimeInput(val) {
   if (!val) return null;
   const m = /^(\d{2}):(\d{2})$/.exec(val);
@@ -288,7 +338,7 @@ function maybeFireLocalNotification(enabled, hhmm) {
       body: '別忘了記錄今日血壓、血糖與運動。',
       tag: 'daily-health-' + today,
     });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function startReminderTicker() {
@@ -348,7 +398,7 @@ function selectTab(tab) {
     else el.setAttribute('hidden', '');
   });
   if (tab === 'records') loadHistory();
-  if (tab === 'settings') loadMe().catch(() => {});
+  if (tab === 'settings') loadMe().catch(() => { });
 }
 
 function applyHashRouting() {
@@ -436,6 +486,7 @@ window.addEventListener('online', updateOfflineBadge);
 window.addEventListener('offline', updateOfflineBadge);
 updateOfflineBadge();
 
+initFontSize();
 initTabs();
 initHelpClose();
 startReminderTicker();
@@ -446,6 +497,7 @@ window.addEventListener('hashchange', applyHashRouting);
     db = await openDb();
     await registerSw();
     await loadMe();
+    restoreLastCheckinValues();
     await loadHistory();
     applyHashRouting();
   } catch (e) {

@@ -18,6 +18,18 @@ html {
   font-size: 16px;
 }
 
+html[data-fs="small"] {
+  font-size: 14px;
+}
+
+html[data-fs="medium"] {
+  font-size: 16px;
+}
+
+html[data-fs="large"] {
+  font-size: 19px;
+}
+
 body {
   margin: 0;
   min-height: 100dvh;
@@ -76,6 +88,48 @@ header.app-header h1 {
   margin: 0 0 0.25rem;
   font-size: 1.35rem;
   font-weight: 700;
+}
+
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.app-header-top h1 {
+  margin: 0;
+}
+
+.font-size-ctrl {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.fs-btn {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.fs-btn:hover {
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.fs-btn.is-active {
+  background: rgba(255, 255, 255, 0.35);
+  opacity: 1;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, 0.85);
 }
 
 header.app-header p {
@@ -292,9 +346,17 @@ textarea {
   word-break: break-word;
 }
 
-.record-block--bp .lbl { color: #1565c0; }
-.record-block--glucose .lbl { color: #c62828; }
-.record-block--exercise .lbl { color: #2e7d32; }
+.record-block--bp .lbl {
+  color: #1565c0;
+}
+
+.record-block--glucose .lbl {
+  color: #c62828;
+}
+
+.record-block--exercise .lbl {
+  color: #2e7d32;
+}
 
 .record-card .btn-line {
   margin-top: 0.65rem;
@@ -371,4 +433,15 @@ body.offline .badge-offline {
 
 .help-banner-inner .btn {
   margin-top: 0.25rem;
+}
+
+.exercise-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: var(--accent-dim);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.65;
 }

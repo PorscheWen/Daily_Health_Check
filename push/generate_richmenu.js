@@ -3,12 +3,40 @@
 const { createCanvas, registerFont } = require('canvas');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+// 根據作業系統載入適當的中文字型
+const platform = os.platform();
+let fontLoaded = false;
 
 try {
-  registerFont('C:/Windows/Fonts/msjhbd.ttc', { family: 'JhengHei', weight: 'bold' });
-  registerFont('C:/Windows/Fonts/msjh.ttc', { family: 'JhengHei' });
-} catch (_) {
-  console.warn('[generate-richmenu] 未載入微軟正黑，將使用預設字型（版面可能略有差異）');
+  if (platform === 'win32') {
+    // Windows: 微軟正黑體
+    registerFont('C:/Windows/Fonts/msjhbd.ttc', { family: 'JhengHei', weight: 'bold' });
+    registerFont('C:/Windows/Fonts/msjh.ttc', { family: 'JhengHei' });
+    fontLoaded = true;
+    console.log('[generate-richmenu] 已載入微軟正黑體');
+  } else if (platform === 'linux') {
+    // Linux: Noto Sans CJK TC
+    registerFont('/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc', { family: 'JhengHei', weight: 'bold' });
+    registerFont('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', { family: 'JhengHei' });
+    try {
+      registerFont('/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf', { family: 'NotoEmoji' });
+    } catch (_) {}
+    fontLoaded = true;
+    console.log('[generate-richmenu] 已載入 Noto Sans CJK TC + Color Emoji');
+  } else if (platform === 'darwin') {
+    // macOS: 可能需要調整路徑
+    registerFont('/System/Library/Fonts/PingFang.ttc', { family: 'JhengHei' });
+    fontLoaded = true;
+    console.log('[generate-richmenu] 已載入蘋方體');
+  }
+} catch (err) {
+  console.warn('[generate-richmenu] 字型載入失敗，將使用預設字型（可能出現方框）:', err.message);
+}
+
+if (!fontLoaded) {
+  console.warn('[generate-richmenu] 未載入中文字型，版面可能出現亂碼');
 }
 
 const W = 2500;
@@ -22,20 +50,20 @@ const cellW = Math.floor(W / COLS);
 const cellH = Math.floor(gridH / ROWS);
 
 const cells = [
-  { label: '使用教學', sub: 'PWA 操作說明', hint: '點擊開啟', icon: '📖', color: '#1565c0' },
-  { label: '打卡', sub: '今日健康打卡', hint: '血壓・血糖・運動', icon: '✏️', color: '#2d7856' },
-  { label: '紀錄', sub: '依時間排序', hint: 'LINE 分享', icon: '📋', color: '#c62828' },
-  { label: '個人設定', sub: '資料與提醒', hint: '年齡性別・通知', icon: '⚙️', color: '#6a1b9a' },
+  { label: '打卡',     sub: '記錄血壓・血糖・運動', hint: '點擊立即打卡', emoji: '✏',  color: '#00B900' },
+  { label: '查詢',     sub: '健康紀錄一目了然',     hint: '依紀錄時間排序', emoji: '🔍', color: '#0097FF' },
+  { label: '個人設定', sub: '個人資料與提醒時間',   hint: '年齡・性別・通知', emoji: '⚙',  color: '#FF9B00' },
+  { label: '使用說明', sub: '操作教學與功能介紹',   hint: '點擊查看說明',   emoji: '📖', color: '#A65FDB' },
 ];
 
 const canvas = createCanvas(W, H);
 const ctx = canvas.getContext('2d');
 
-ctx.fillStyle = '#1e5c42';
+ctx.fillStyle = '#06C755';
 ctx.fillRect(0, 0, W, HEADER_H);
 const hg = ctx.createLinearGradient(0, 0, 0, HEADER_H);
-hg.addColorStop(0, 'rgba(255,255,255,0.12)');
-hg.addColorStop(1, 'rgba(0,0,0,0.12)');
+hg.addColorStop(0, 'rgba(255,255,255,0.18)');
+hg.addColorStop(1, 'rgba(0,0,0,0.15)');
 ctx.fillStyle = hg;
 ctx.fillRect(0, 0, W, HEADER_H);
 
@@ -43,13 +71,13 @@ ctx.textAlign = 'center';
 ctx.textBaseline = 'middle';
 ctx.fillStyle = '#FFFFFF';
 ctx.font = 'bold 96px "JhengHei", sans-serif';
-ctx.shadowColor = 'rgba(0,0,0,0.25)';
-ctx.shadowBlur = 12;
+ctx.shadowColor = 'rgba(0,0,0,0.30)';
+ctx.shadowBlur = 14;
 ctx.fillText('每日健康打卡', W / 2, HEADER_H * 0.42);
 ctx.shadowBlur = 0;
 ctx.font = '48px "JhengHei", sans-serif';
-ctx.fillStyle = 'rgba(255,255,255,0.9)';
-ctx.fillText('Rich Menu · 教學與 PWA 分頁', W / 2, HEADER_H * 0.78);
+ctx.fillStyle = 'rgba(255,255,255,0.92)';
+ctx.fillText('追蹤血壓・血糖・運動，守護每日健康', W / 2, HEADER_H * 0.78);
 
 for (let row = 0; row < ROWS; row++) {
   for (let col = 0; col < COLS; col++) {
@@ -70,11 +98,12 @@ for (let row = 0; row < ROWS; row++) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    ctx.font = '160px sans-serif';
+    // emoji / icon（優先 NotoEmoji，回退 JhengHei）
+    ctx.font = '180px "NotoEmoji", "JhengHei", sans-serif';
     ctx.fillStyle = 'white';
-    ctx.shadowColor = 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur = 10;
-    ctx.fillText(g.icon, cx, y + cellH * 0.28);
+    ctx.shadowColor = 'rgba(0,0,0,0.40)';
+    ctx.shadowBlur = 14;
+    ctx.fillText(g.emoji, cx, y + cellH * 0.28);
     ctx.shadowBlur = 0;
 
     ctx.font = 'bold 100px "JhengHei", sans-serif';
@@ -83,13 +112,13 @@ for (let row = 0; row < ROWS; row++) {
     ctx.fillText(g.label, cx, y + cellH * 0.52);
     ctx.shadowBlur = 0;
 
-    ctx.font = '56px "JhengHei", sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.fillText(g.sub, cx, y + cellH * 0.66);
+    ctx.font = '112px "JhengHei", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(g.sub, cx, y + cellH * 0.68);
 
     ctx.font = '48px "JhengHei", sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    ctx.fillText(g.hint, cx, y + cellH * 0.86);
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.fillText(g.hint, cx, y + cellH * 0.88);
   }
 }
 

@@ -78,16 +78,16 @@ Rich Menu 圖請在本機或 **GitHub Actions**（workflow 已安裝 libcairo �
 
 若**只使用 PWA**、不用 LINE 對話，可不設定 Webhook，但仍需 token／secret 若你要使用 Rich Menu 或 Push。
 
-## Rich Menu（底部選單：教學 + 三個分頁連結）
+## Rich Menu（底部選單：四格深層連結）
 
-選單圖為 **2500×1686**，四格對應 PWA 錨點（與站內三個分頁 + 教學）：
+選單圖為 **2500×1686**，**由左上到右下**四格對應 PWA 錨點；紀錄／查詢／設定三色與站內分頁標頭一致（見 `public/styles.css`），**說明**格為紫色以便辨識。
 
-| 區塊 | 連結 |
-|------|------|
-| 使用教學 | `{PUBLIC_APP_URL}#help` |
-| 打卡 | `{PUBLIC_APP_URL}#checkin` |
-| 紀錄 | `{PUBLIC_APP_URL}#records` |
-| 個人設定 | `{PUBLIC_APP_URL}#settings` |
+| 位置 | 區塊 | 連結 |
+|------|------|------|
+| 左上 | 📋 紀錄 | `{PUBLIC_APP_URL}#records` |
+| 右上 | ✏️ 查詢（今日打卡） | `{PUBLIC_APP_URL}#checkin` |
+| 左下 | ⚙️ 設定 | `{PUBLIC_APP_URL}#settings` |
+| 右下 | 📖 說明 | `{PUBLIC_APP_URL}#help` |
 
 ### 產生圖檔並上傳到 LINE
 

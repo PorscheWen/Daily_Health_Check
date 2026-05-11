@@ -49,11 +49,36 @@ const gridH = H - HEADER_H;
 const cellW = Math.floor(W / COLS);
 const cellH = Math.floor(gridH / ROWS);
 
+/* 左上→右下：紀錄、查詢(#checkin)、設定、說明；前三格對齊 public/styles.css 分頁標頭色，說明為紫色 */
 const cells = [
-  { label: '打卡',     sub: '記錄血壓・血糖・運動', hint: '點擊立即打卡', emoji: '✏',  color: '#00B900' },
-  { label: '查詢',     sub: '健康紀錄一目了然',     hint: '依紀錄時間排序', emoji: '🔍', color: '#0097FF' },
-  { label: '個人設定', sub: '個人資料與提醒時間',   hint: '年齡・性別・通知', emoji: '⚙',  color: '#FF9B00' },
-  { label: '使用說明', sub: '操作教學與功能介紹',   hint: '點擊查看說明',   emoji: '📖', color: '#A65FDB' },
+  {
+    label: '紀錄',
+    sub: '血壓・血糖・運動',
+    hint: '依時間瀏覽與分享',
+    emoji: '📋',
+    color: '#3a6db5',
+  },
+  {
+    label: '查詢',
+    sub: '今日打卡與衛教建議',
+    hint: '填寫數值・查看建議',
+    emoji: '✏️',
+    color: '#2d7856',
+  },
+  {
+    label: '設定',
+    sub: '個人資料・提醒通知',
+    hint: '年齡・性別・每日提醒',
+    emoji: '⚙️',
+    color: '#a86532',
+  },
+  {
+    label: '說明',
+    sub: '操作教學與功能介紹',
+    hint: '使用教學一次看懂',
+    emoji: '📖',
+    color: '#8E58D2',
+  },
 ];
 
 const canvas = createCanvas(W, H);

@@ -97,24 +97,24 @@ async function main() {
   const { richMenuId } = await lineApi('POST', '/v2/bot/richmenu', {
     size: { width: W, height: H },
     selected: true,
-    name: 'Daily_Health_Check｜教學與分頁',
+    name: 'Daily_Health_Check｜紀錄・查詢・設定・說明',
     chatBarText: '健康打卡',
     areas: [
       {
         bounds: { x: 0, y: gridTop, width: cellW, height: cellH },
-        action: { type: 'uri', label: '使用教學', uri: urlHelp },
+        action: { type: 'uri', label: '📋 紀錄', uri: urlRecords },
       },
       {
         bounds: { x: cellW, y: gridTop, width: cellW, height: cellH },
-        action: { type: 'uri', label: '打卡', uri: urlCheckin },
+        action: { type: 'uri', label: '✏️ 查詢', uri: urlCheckin },
       },
       {
         bounds: { x: 0, y: gridTop + cellH, width: cellW, height: cellH },
-        action: { type: 'uri', label: '紀錄', uri: urlRecords },
+        action: { type: 'uri', label: '⚙️ 設定', uri: urlSettings },
       },
       {
         bounds: { x: cellW, y: gridTop + cellH, width: cellW, height: cellH },
-        action: { type: 'uri', label: '個人設定', uri: urlSettings },
+        action: { type: 'uri', label: '📖 說明', uri: urlHelp },
       },
     ],
   });
